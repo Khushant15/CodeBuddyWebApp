@@ -19,6 +19,7 @@ export default function HomePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
+    if (!auth) return;
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (u) {
         setUserName(u.displayName || u.email?.split("@")[0] || "Developer");

@@ -10,9 +10,13 @@ export function useAuth(redirectTo = "/login") {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
     const unsub = onAuthStateChanged(auth, (u) => {
       if (!u) {
-        router.replace(redirectTo);
+        if (redirectTo) router.replace(redirectTo);
       } else {
         setUser(u);
       }

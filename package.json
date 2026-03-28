@@ -27,9 +27,9 @@
     "firebase": "^10.0.0",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.454.0",
-    "next": "15.3.6",
-    "react": "^19",
-    "react-dom": "^19",
+    "next": "^16.2.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
     "recharts": "latest",
     "sonner": "latest",
@@ -47,5 +47,8 @@
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.17.0"
   }
 }

@@ -22,13 +22,13 @@ export const Navbar = () => {
   const [showNotifs, setShowNotifs] = useState(false);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
+    const unsub = auth ? onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (u) {
         fetchNotifications(u.uid);
         fetchUserRole(u.uid, u.email || "");
       }
-    });
+    }) : () => {};
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => {
@@ -187,8 +187,8 @@ export const Navbar = () => {
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="lg:hidden absolute top-full left-0 w-full p-4 mt-2">
-            <div className="glass-panel p-4 space-y-2 bg-brand-bg-secondary/95 shadow-2xl">
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="lg:hidden absolute top-full left-0 w-full p-4 mt-2 z-[150]">
+            <div className="glass-panel p-4 space-y-2 bg-[#0B1120]/98 backdrop-blur-2xl shadow-2xl border-white/10 ring-1 ring-white/5">
               {navItems.map((item) => (
                 <Link key={item.name} href={item.href} onClick={() => setIsOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-white/5 text-white border border-white/5 transition-colors">
                   <item.icon className="w-5 h-5 text-blue-400" />

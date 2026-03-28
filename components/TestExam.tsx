@@ -116,20 +116,20 @@ export const TestExam: React.FC<TestExamProps> = ({ test, uid, onComplete }) => 
   const q = test.questions[currentIdx];
 
   return (
-    <div className="max-w-5xl mx-auto flex flex-col pt-12">
+    <div className="max-w-5xl mx-auto flex flex-col pt-6 md:pt-12 px-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-16 px-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 md:mb-16">
          <div>
-            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-[0.5em] mb-4">{test.topic} Certification Unit</p>
-            <h2 className="text-3xl font-bold text-white uppercase tracking-tight">{test.title}</h2>
+            <p className="text-[9px] md:text-[10px] font-bold text-blue-500 uppercase tracking-[0.5em] mb-2 md:mb-4">{test.topic} Certification Unit</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-white uppercase tracking-tight">{test.title}</h2>
          </div>
-         <div className={`p-6 px-10 rounded-[32px] border flex items-center gap-5 transition-all ${timeLeft < 60 ? 'border-red-500/30 bg-red-500/5 animate-pulse' : 'border-white/5 bg-white/[0.01]'}`}>
-            <Clock className={`w-6 h-6 ${timeLeft < 60 ? 'text-red-500' : 'text-gray-900'}`} />
-            <span className={`text-3xl font-bold tabular-nums tracking-tight ${timeLeft < 60 ? 'text-red-500' : 'text-white'}`}>{formatTime(timeLeft)}</span>
+         <div className={`p-4 md:p-6 px-8 md:px-10 rounded-2xl md:rounded-[32px] border flex items-center gap-4 md:gap-5 transition-all ${timeLeft < 60 ? 'border-red-500/30 bg-red-500/5 animate-pulse' : 'border-white/5 bg-white/[0.01]'}`}>
+            <Clock className={`w-5 h-5 md:w-6 md:h-6 ${timeLeft < 60 ? 'text-red-500' : 'text-gray-900'}`} />
+            <span className={`text-2xl md:text-3xl font-bold tabular-nums tracking-tight ${timeLeft < 60 ? 'text-red-500' : 'text-white'}`}>{formatTime(timeLeft)}</span>
          </div>
       </div>
 
-      <div className="flex-1 grid lg:grid-cols-[1fr,320px] gap-12 px-4 pb-20">
+      <div className="flex-1 grid lg:grid-cols-[1fr,320px] gap-8 md:gap-12 pb-20">
          <div className="flex flex-col">
             <AnimatePresence mode="wait">
                <motion.div key={currentIdx} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="flex-1">

@@ -33,8 +33,10 @@ export default function LessonPage({ params }: { params: Promise<{ track: string
   const [code, setCode] = useState("");
   const [output, setOutput] = useState<any>(null);
   const [isExecuting, setIsExecuting] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
+  const [trackProgress, setTrackProgress] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'theory' | 'examples' | 'video' | 'solutions'>('theory');
+  const [mobileView, setMobileView] = useState<'docs' | 'editor'>('docs');
+  const [isValidating, setIsValidating] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [hintIndex, setHintIndex] = useState(-1);
   const [exerciseIndex, setExerciseIndex] = useState(0);
@@ -77,6 +79,10 @@ export default function LessonPage({ params }: { params: Promise<{ track: string
   };
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (u) {
         setUid(u.uid);
@@ -322,10 +328,26 @@ export default function LessonPage({ params }: { params: Promise<{ track: string
         </header>
 
         {/* ⚡ Main Neural Workspace */}
-        <div className="flex-1 grid lg:grid-cols-[450px,1fr] xl:grid-cols-[550px,1fr] overflow-hidden">
+        <div className="flex-1 flex flex-col lg:grid lg:grid-cols-[450px,1fr] xl:grid-cols-[550px,1fr] overflow-hidden relative">
           
+          {/* Mobile Workspace Toggle - Only visible on small screens */}
+          <div className="lg:hidden flex border-b border-white/5 bg-brand-bg-secondary/40 backdrop-blur-xl">
+             <button 
+               onClick={() => setMobileView('docs')}
+               className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-[0.2em] transition-all border-b-2 ${mobileView === 'docs' ? 'text-blue-500 border-blue-500 bg-blue-500/5' : 'text-gray-500 border-transparent'}`}
+             >
+               Architecture
+             </button>
+             <button 
+               onClick={() => setMobileView('editor')}
+               className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-[0.2em] transition-all border-b-2 ${mobileView === 'editor' ? 'text-blue-500 border-blue-500 bg-blue-500/5' : 'text-gray-500 border-transparent'}`}
+             >
+               Source Code
+             </button>
+          </div>
+
           {/* Left Column: Knowledge Base */}
-          <aside className="border-r border-white/5 flex flex-col bg-brand-bg-secondary/20 overflow-hidden">
+          <aside className={`${mobileView === 'docs' ? 'flex' : 'hidden lg:flex'} border-r border-white/5 flex-col bg-brand-bg-secondary/20 overflow-hidden`}>
              {/* Local Navigation */}
              <div className="flex items-center border-b border-white/5 bg-white/[0.02]">
                 {[
@@ -342,7 +364,7 @@ export default function LessonPage({ params }: { params: Promise<{ track: string
                         fetchSolutions();
                       }
                     }}
-                    className={`flex-1 flex items-center justify-center gap-2.5 py-4 text-[10px] font-bold uppercase tracking-widest transition-all border-b-2 ${activeTab === tab.id ? 'text-blue-500 border-blue-500 bg-blue-500/5' : 'text-gray-600 border-transparent hover:text-gray-400'}`}
+                    className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2.5 py-4 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all border-b-2 ${activeTab === tab.id ? 'text-blue-500 border-blue-500 bg-blue-500/5' : 'text-gray-600 border-transparent hover:text-gray-400'}`}
                   >
                     <tab.icon className="w-3.5 h-3.5" /> {tab.label}
                   </button>
@@ -526,7 +548,7 @@ export default function LessonPage({ params }: { params: Promise<{ track: string
              </div>
           </aside>
           {/* Right Column: Interaction Layer */}
-          <main className="flex flex-col overflow-hidden bg-black/20 relative">
+          <main className={`${mobileView === 'editor' ? 'flex' : 'hidden lg:flex'} flex-col overflow-hidden bg-black/20 relative`}>
              {/* Editor Tools */}
              <div className="px-6 py-2.5 bg-white/[0.03] border-b border-white/5 flex items-center justify-between">
                  <div className="flex items-center gap-5">

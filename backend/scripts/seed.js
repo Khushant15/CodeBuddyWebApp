@@ -1,6 +1,8 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const mongoose = require('mongoose');
-const Lesson = require('./models/Lesson');
+const Lesson = require('../models/Lesson');
+const Challenge = require('../models/Challenge');
 
 const TRACKS = {
   python: {
@@ -1809,6 +1811,79 @@ const generateLessons = (trackKey) => {
   return lessons;
 };
 
+const dsaChallenges = [
+  {
+    title: "Bubble Sort Implementation",
+    difficulty: "Intermediate",
+    topic: "DSA",
+    lang: "javascript",
+    xpReward: 100,
+    desc: "Implement a function bubbleSort(arr) that sorts an array in ascending order.",
+    starterCode: "function bubbleSort(arr) {\n  // Your logic here\n  return arr;\n}",
+    testCases: [{ input: "[5, 3, 8, 1]", expected: "[1, 3, 5, 8]" }],
+    hints: ["Compare adjacent elements and swap them if they are in the wrong order."]
+  },
+  {
+    title: "Binary Search",
+    difficulty: "Intermediate",
+    topic: "DSA",
+    lang: "javascript",
+    xpReward: 120,
+    desc: "Implement binary search to find an element in a sorted array.",
+    starterCode: "function binarySearch(arr, target) {\n  // return index or -1\n}",
+    testCases: [{ input: "[1, 2, 3, 4], 3", expected: "2" }]
+  }
+];
+
+const jsChallenges = [
+  {
+    title: "Deep Clone Object",
+    difficulty: "Professional",
+    topic: "JavaScript",
+    lang: "javascript",
+    xpReward: 150,
+    desc: "Create a function deepClone(obj) that returns a deep copy of an object.",
+    starterCode: "function deepClone(obj) {\n  return JSON.parse(JSON.stringify(obj)); // Improve this\n}",
+    testCases: [{ input: "{a:1, b:{c:2}}", expected: "{a:1, b:{c:2}}" }]
+  },
+  {
+    title: "Asynchronous Retry",
+    difficulty: "Professional",
+    topic: "JavaScript",
+    lang: "javascript",
+    xpReward: 200,
+    desc: "Write a function withRetry(fn, retries) that attempts to execute an async function multiple times.",
+    starterCode: "async function withRetry(fn, limit) {\n  // Logic\n}",
+    testCases: []
+  }
+];
+
+const reactChallenges = [
+  {
+    title: "Custom Hook: useLocalStorage",
+    difficulty: "Intermediate",
+    topic: "React",
+    lang: "javascript",
+    xpReward: 100,
+    desc: "Implement a custom hook useLocalStorage(key, initialValue) to sync state with localStorage.",
+    starterCode: "function useLocalStorage(key, initialValue) {\n  // logic\n}",
+    testCases: []
+  }
+];
+
+const nodeChallenges = [
+  {
+    title: "Simple File Server",
+    difficulty: "Intermediate",
+    topic: "Node",
+    lang: "javascript",
+    xpReward: 100,
+    desc: "Use the 'fs' module to read a file and return its content.",
+    starterCode: "const fs = require('fs');\nfunction readFileContent(path) {\n  return fs.readFileSync(path, 'utf8');\n}",
+    testCases: []
+  }
+];
+
 async function seedMaster() {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
@@ -1816,6 +1891,7 @@ async function seedMaster() {
 
     // 1. Purge Legacy Dataframes
     await Lesson.deleteMany({});
+    await Challenge.deleteMany({});
     console.log('🗑️  LEGACY DATAFRAMES PURGED.');
 
     // 2. Generate and Insert Track Modules
@@ -1824,6 +1900,10 @@ async function seedMaster() {
       await Lesson.insertMany(lessons);
       console.log(`✅ ${TRACKS[trackKey].name}: ${lessons.length} Modules Online.`);
     }
+
+    // 3. Inject Practice Challenges
+    await Challenge.insertMany([...dsaChallenges, ...jsChallenges, ...reactChallenges, ...nodeChallenges]);
+    console.log('⚡ PRACTICE ARENA SYNCHRONIZED.');
 
     console.log('--- CURRICULUM SYNCHRONIZATION COMPLETE ---');
     process.exit();

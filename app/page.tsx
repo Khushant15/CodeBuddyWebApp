@@ -10,6 +10,7 @@ import { auth } from "@/app/firebase/config";
 export default function LandingPage() {
   const router = useRouter();
   useEffect(() => {
+    if (!auth) return;
     const unsub = onAuthStateChanged(auth, (u) => {
       if (u) router.replace("/home");
     });

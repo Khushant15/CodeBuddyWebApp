@@ -16,6 +16,10 @@ export default function TrackPage({ params }: { params: Promise<{ track: string 
   const [completedIds, setCompletedIds] = useState<string[]>([]);
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (u) {
         try {
