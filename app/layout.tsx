@@ -2,55 +2,49 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Toaster } from "sonner";
-import { ChatBot } from "@/components/ChatBot";
+import { AIChat } from "@/components/AIChat";
+import ClientScene from "@/components/ClientScene";
 
 export const metadata: Metadata = {
-  title: "CodeBuddy — Gamified Coding Platform",
-  description: "Learn to code through gamified lessons, challenges, and AI-powered help.",
+  title: "CodeBuddy | AI-Powered Coding & Learning Platform",
+  description: "CodeBuddy · AI-Powered Coding & Learning Platform. Built with ❤️ by Khushant Sharma.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Outfit:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-      </head>
-      <body>
-        {/* Background orbs */}
-        <div className="bg-orbs">
-          <div className="orb w-[600px] h-[600px] bg-[#00ff87] top-[-100px] left-[-100px]" />
-          <div className="orb w-[500px] h-[500px] bg-[#bf5fff] bottom-[-100px] right-[-100px]" style={{opacity:0.08}} />
-          <div className="orb w-[400px] h-[400px] bg-[#00e5ff] top-[40%] left-[40%]" style={{opacity:0.05}} />
-        </div>
-
-        <div className="relative z-10 min-h-screen flex flex-col">
+    <html lang="en" className="dark">
+      <body className="antialiased selection:bg-blue-500/20 selection:text-white bg-[#0B1120]">
+        <ClientScene />
+        
+        <div className="relative z-10 flex flex-col min-h-screen">
           <Navbar />
-          <main className="flex-1 pt-20">
+          <main className="flex-1">
             {children}
           </main>
-          <footer className="border-t border-[rgba(0,255,135,0.08)] py-8 mt-16">
-            <div className="container">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-[var(--neon-green)] font-heading text-sm tracking-widest">CODEBUDDY</span>
-                </div>
-                <p className="text-xs text-white/25 font-mono">© 2025 CodeBuddy · Built for developers, by developers</p>
-                <div className="flex gap-6">
-                  {["Terms","Privacy","Docs"].map(l => (
-                    <a key={l} href="#" className="text-xs text-white/30 hover:text-[var(--neon-green)] transition-colors font-mono">{l}</a>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </footer>
+                    <footer className="border-t border-white/5 py-24 bg-white/[0.01]">
+             <div className="container mx-auto px-6">
+               <div className="flex flex-col md:flex-row items-center justify-between gap-12">
+                 <div className="flex flex-col items-center md:items-start gap-4">
+                   <div className="flex flex-col items-center md:items-start text-glow-blue uppercase">
+                     <span className="text-white text-3xl font-bold tracking-[0.2em]">CodeBuddy</span>
+                     <p className="text-[10px] text-blue-400 font-bold uppercase tracking-[0.3em] mt-1 text-center md:text-left">Built for developers, by developers</p>
+                   </div>
+                   <p className="text-[10px] text-gray-700 font-bold uppercase tracking-[0.4em]">© 2025 CodeBuddy</p>
+                 </div>
+ 
+                 <div className="flex flex-wrap justify-center gap-12">
+                   {["Terms", "Privacy", "Docs"].map(l => (
+                     <a key={l} href="#" className="text-[11px] font-bold text-gray-600 hover:text-blue-500 transition-colors uppercase tracking-widest">{l}</a>
+                   ))}
+                 </div>
+ 
+               </div>
+             </div>
+           </footer>
         </div>
 
-        <ChatBot />
-        <Toaster position="bottom-right" toastOptions={{
-          style: { background: "rgba(13,11,28,0.95)", border: "1px solid rgba(0,255,135,0.2)", color: "#e2e0f5" }
-        }} />
+        <AIChat />
+        <Toaster theme="dark" position="bottom-right" closeButton richColors />
       </body>
     </html>
   );

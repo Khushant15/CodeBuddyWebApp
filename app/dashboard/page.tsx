@@ -1,233 +1,174 @@
+// c:\Users\Administrator\OneDrive\Desktop\Projects\codebuddy_final\codebuddy\app\dashboard\page.tsx
 "use client";
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { AuthGuard } from "@/components/AuthGuard";
-import { Trophy, Flame, BookOpen, Bug, Target, ArrowRight, Star } from "lucide-react";
-import { auth } from "@/app/firebase/config";
-import { onAuthStateChanged } from "firebase/auth";
-import { getOrCreateUserProfile, updateStreak, xpToLevel, type UserProfile } from "@/lib/userService";
-import Link from "next/link";
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar,
-} from "recharts";
+import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Trophy, Zap, Flame, Award, ChevronRight, Play, Rocket, Target, Star, Brain, ArrowUpRight, BarChart3 } from 'lucide-react';
+import { AuthGuard } from '@/components/AuthGuard';
+import { progressAPI, aiAPI } from '@/lib/apiClient';
+import { auth } from '@/app/firebase/config';
+import { onAuthStateChanged } from 'firebase/auth';
+import Link from 'next/link';
 
-const tooltipStyle = {
-  contentStyle: { background: "rgba(8,7,23,0.97)", border: "1px solid rgba(0,255,135,0.15)", borderRadius: 8, color: "#e2e0f5", fontFamily: "Fira Code, monospace", fontSize: 11 },
-  labelStyle: { color: "rgba(0,255,135,0.7)" },
-};
-
-const progressData = [
-  { date: "Mon", hours: 0 }, { date: "Tue", hours: 0 }, { date: "Wed", hours: 0 },
-  { date: "Thu", hours: 0 }, { date: "Fri", hours: 0 }, { date: "Sat", hours: 0 }, { date: "Sun", hours: 0 },
-];
-const activityData = [
-  { day: "Mon", lessons: 0, challenges: 0 }, { day: "Tue", lessons: 0, challenges: 0 },
-  { day: "Wed", lessons: 0, challenges: 0 }, { day: "Thu", lessons: 0, challenges: 0 },
-  { day: "Fri", lessons: 0, challenges: 0 }, { day: "Sat", lessons: 0, challenges: 0 },
-  { day: "Sun", lessons: 0, challenges: 0 },
-];
-
-const goals = [
-  { id: 1, title: "Complete Python Track", desc: "Finish all 6 Python lessons", target: 6, key: "python" },
-  { id: 2, title: "Solve 5 Challenges", desc: "Complete debug challenges", target: 5, key: "challenge" },
-  { id: 3, title: "Earn 300 XP", desc: "Reach 300 total XP", target: 300, key: "xp" },
-];
-
-export default function DashboardPage() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+export default function Dashboard() {
+  const [stats, setStats] = useState<any>(null);
+  const [suggestion, setSuggestion] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (u) {
-        await updateStreak(u.uid);
-        const p = await getOrCreateUserProfile(u.uid, u.email || "", u.displayName || "Developer");
-        setProfile(p);
+        try {
+          const res = await progressAPI.getStats(u.uid);
+          setStats(res.data);
+          const aiRes = await aiAPI.suggest(res.data);
+          setSuggestion(aiRes.data);
+        } catch (err) {
+          console.error("Dashboard load fail:", err);
+        }
       }
       setLoading(false);
     });
     return unsub;
   }, []);
 
-  const xp = profile?.xp ?? 0;
-  const level = xpToLevel(xp);
-  const xpInLevel = xp % 100;
-  const lessons = profile?.completedLessons?.length ?? 0;
-  const challenges = profile?.completedChallenges?.length ?? 0;
-  const streak = profile?.streak ?? 0;
+  if (loading) return (
+    <div className="min-h-screen bg-brand-bg flex flex-col items-center justify-center gap-6">
+      <div className="w-24 h-1 bg-white/5 rounded-full overflow-hidden">
+        <motion.div initial={{ x: "-100%" }} animate={{ x: "100%" }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-full h-full bg-blue-500" />
+      </div>
+      <div className="text-[10px] font-bold text-gray-800 uppercase tracking-[0.4em] animate-pulse">Initializing Interface...</div>
+    </div>
+  );
 
-  const getGoalProgress = (g: typeof goals[0]) => {
-    if (g.key === "xp") return Math.min(xp, g.target);
-    if (g.key === "python") return profile?.completedLessons?.filter(l => l.startsWith("python")).length ?? 0;
-    if (g.key === "challenge") return challenges;
-    return 0;
-  };
+  const totalLessons = stats?.completedLessons?.length || 0;
+  const totalProblems = stats?.solvedProblems?.length || 0;
+  const streakCount = stats?.streak || 0;
+  const xpCount = stats?.xp || 0;
 
   return (
     <AuthGuard>
-      <div className="container py-10">
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
-          <p className="text-[11px] font-mono text-[var(--neon-green)] uppercase tracking-widest mb-2">Analytics</p>
-          <h1 className="font-heading text-3xl md:text-5xl font-800 text-white mb-2">
-            YOUR <span className="gradient-heading">DASHBOARD</span>
-          </h1>
-          {profile && (
-            <p className="text-white/40 text-sm font-mono">
-              Welcome back, <span className="text-[var(--neon-green)]">{profile.displayName}</span> · Level {level}
-            </p>
-          )}
-        </motion.div>
-
-        {/* Level bar */}
-        {!loading && (
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="card p-5 mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[rgba(0,255,135,0.1)] border border-[rgba(0,255,135,0.2)] flex items-center justify-center">
-                  <Star className="w-5 h-5 text-[var(--neon-green)]" />
-                </div>
-                <div>
-                  <div className="font-heading text-xs font-700 tracking-wider text-white">LEVEL {level}</div>
-                  <div className="text-[10px] font-mono text-white/30 mt-0.5">{xpInLevel}/100 XP to next level</div>
-                </div>
+      <div className="container py-12 pb-24">
+        {/* Header Section */}
+        <div className="grid lg:grid-cols-[1fr,420px] gap-10 mb-16">
+           <motion.div initial={{ opacity: 0, x: -25 }} animate={{ opacity: 1, x: 0 }}>
+              <p className="text-[10px] font-bold text-blue-500 uppercase tracking-[0.4em] mb-3">Intelligence Overview</p>
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-10 uppercase tracking-tight leading-none">
+                 WELCOME BACK, <span className="text-blue-500">DEVELOPER</span>
+              </h1>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+                 {[
+                    { label: 'XP', value: xpCount, icon: Zap, color: 'text-blue-400', bg: 'bg-blue-500/5' },
+                    { label: 'Streak', value: `${streakCount}d`, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/5' },
+                    { label: 'Solved', value: totalProblems, icon: Target, color: 'text-indigo-400', bg: 'bg-indigo-500/5' },
+                    { label: 'Certificates', value: Object.values(stats?.testScores || {}).filter((s:any) => s >= 70).length, icon: Award, color: 'text-emerald-400', bg: 'bg-emerald-500/5' }
+                 ].map((item, i) => (
+                    <div key={i} className={`p-5 rounded-2xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-all group`}>
+                       <div className={`w-8 h-8 rounded-lg ${item.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                          <item.icon className={`w-4 h-4 ${item.color}`} />
+                       </div>
+                       <p className="text-2xl font-bold text-white tracking-tight">{item.value}</p>
+                       <p className="text-[9px] font-bold text-gray-700 uppercase tracking-widest mt-1.5">{item.label}</p>
+                    </div>
+                 ))}
               </div>
-              <div className="font-heading text-2xl font-800 neon-text-green">{xp} XP</div>
-            </div>
-            <div className="progress-track h-2">
-              <div className="progress-fill" style={{ width: `${xpInLevel}%` }} />
-            </div>
-          </motion.div>
-        )}
+           </motion.div>
 
-        {/* Stats */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { title: "Learning Streak", value: `${streak}d`, icon: Flame, card: "", iconBg: "bg-[rgba(255,107,43,0.1)]", iconColor: "text-[var(--neon-orange)]", val: "neon-text-orange" },
-            { title: "Total XP", value: xp.toString(), icon: Trophy, card: "card-cyan", iconBg: "bg-[rgba(0,229,255,0.1)]", iconColor: "text-[var(--neon-cyan)]", val: "neon-text-cyan" },
-            { title: "Lessons Done", value: lessons.toString(), icon: BookOpen, card: "card-violet", iconBg: "bg-[rgba(191,95,255,0.1)]", iconColor: "text-[var(--neon-violet)]", val: "neon-text-violet" },
-            { title: "Challenges", value: challenges.toString(), icon: Bug, card: "", iconBg: "bg-[rgba(0,255,135,0.1)]", iconColor: "text-[var(--neon-green)]", val: "neon-text-green" },
-          ].map((s, i) => (
-            <motion.div key={s.title} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 + i * 0.08 }}>
-              <div className={`card ${s.card} p-5`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${s.iconBg}`}>
-                    <s.icon className={`w-4 h-4 ${s.iconColor}`} />
-                  </div>
-                  <span className="text-[10px] font-mono bg-white/5 px-2 py-0.5 rounded-full text-white/25">+0%</span>
-                </div>
-                <div className={`text-2xl font-heading font-800 ${s.val}`}>{loading ? "—" : s.value}</div>
-                <div className="text-[11px] text-white/35 mt-0.5">{s.title}</div>
+           {/* Next Step AI Widget */}
+           <motion.div initial={{ opacity: 0, x: 25 }} animate={{ opacity: 1, x: 0 }} className="p-8 rounded-2xl border border-blue-500/20 bg-blue-500/5 relative overflow-hidden group flex flex-col">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none" />
+              <div className="relative z-10 flex flex-col h-full">
+                 <div className="flex items-center gap-3 mb-8">
+                    <div className="p-2 rounded-lg bg-blue-500/20">
+                       <Brain className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.3em]">Neural Advisor</span>
+                 </div>
+                 <h3 className="text-xl font-bold text-white mb-4 leading-tight tracking-tight uppercase">{suggestion?.suggestion || "Initiate Python Core"}</h3>
+                 <p className="text-[13px] text-gray-500 mb-10 leading-relaxed font-light italic">"{suggestion?.reason || "Operational parameters suggest continuing your current trajectory to maximize XP yields."}"</p>
+                 <Link href="/roadmap" className="mt-auto px-6 py-4 rounded-xl bg-blue-500 text-white text-[11px] font-bold uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center justify-center gap-2 group/btn">
+                    Launch Next Module <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                 </Link>
               </div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* Charts */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-            <div className="card p-6">
-              <h2 className="font-heading text-sm font-700 tracking-wider text-white/70 mb-6">LEARNING PROGRESS</h2>
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={progressData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                    <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" tick={{ fontSize: 10, fontFamily: "Fira Code" }} />
-                    <YAxis stroke="rgba(255,255,255,0.2)" tick={{ fontSize: 10, fontFamily: "Fira Code" }} />
-                    <Tooltip {...tooltipStyle} />
-                    <Line type="monotone" dataKey="hours" stroke="var(--neon-green)" strokeWidth={2} dot={{ fill: "var(--neon-green)", strokeWidth: 0, r: 3 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 }}>
-            <div className="card p-6">
-              <h2 className="font-heading text-sm font-700 tracking-wider text-white/70 mb-6">WEEKLY ACTIVITY</h2>
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={activityData} barGap={3}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                    <XAxis dataKey="day" stroke="rgba(255,255,255,0.2)" tick={{ fontSize: 10, fontFamily: "Fira Code" }} />
-                    <YAxis stroke="rgba(255,255,255,0.2)" tick={{ fontSize: 10, fontFamily: "Fira Code" }} />
-                    <Tooltip {...tooltipStyle} />
-                    <Bar dataKey="lessons" fill="var(--neon-green)" radius={[3,3,0,0]} fillOpacity={0.8} />
-                    <Bar dataKey="challenges" fill="var(--neon-violet)" radius={[3,3,0,0]} fillOpacity={0.8} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </motion.div>
+           </motion.div>
         </div>
 
-        {/* Goals + Completed lessons */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <div className="card p-6">
-              <h2 className="font-heading text-sm font-700 tracking-wider text-white/70 mb-6">CURRENT GOALS</h2>
-              <div className="space-y-5">
-                {goals.map((g, i) => {
-                  const progress = getGoalProgress(g);
-                  const pct = Math.min(Math.round((progress / g.target) * 100), 100);
-                  return (
-                    <motion.div key={g.id} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ delay: i * 0.1 }} viewport={{ once: true }}>
-                      <div className="flex justify-between items-start mb-1.5">
-                        <div>
-                          <p className="text-sm font-mono text-white/70">{g.title}</p>
-                          <p className="text-[10px] text-white/30 mt-0.5">{g.desc}</p>
-                        </div>
-                        <span className="text-xs font-mono text-white/35 flex-shrink-0 ml-4">{progress}/{g.target}</span>
-                      </div>
-                      <div className="progress-track">
-                        <div className="progress-fill" style={{ width: `${pct}%` }} />
-                      </div>
-                      <div className="flex justify-end mt-1">
-                        <span className="text-[10px] font-mono text-[var(--neon-green)]">{pct}%</span>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-          </motion.div>
+        {/* Content Tabs */}
+        <div className="grid lg:grid-cols-[1fr,380px] gap-16">
+           <div className="space-y-16">
+              {/* Mastery Overviews */}
+              <section>
+                 <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-[10px] font-bold text-white uppercase tracking-[0.3em] flex items-center gap-3">
+                       <BarChart3 className="w-4 h-4 text-blue-500" /> Operational Proficiency
+                    </h2>
+                 </div>
+                 <div className="grid gap-5">
+                    {['python', 'javascript', 'html', 'css', 'dsa'].map((t) => (
+                       <div key={t} className="p-6 rounded-2xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.02] transition-all">
+                          <div className="flex items-center justify-between mb-5">
+                             <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]" />
+                                <span className="text-[11px] font-bold text-gray-300 uppercase tracking-widest">{t} Environment</span>
+                             </div>
+                             <span className="text-[10px] font-bold text-gray-700 uppercase">Module Level {stats?.currentLevel?.[t] || 1}</span>
+                          </div>
+                          <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                             <motion.div initial={{ width: 0 }} animate={{ width: t === 'python' ? '65%' : t === 'javascript' ? '40%' : '15%' }} className="h-full bg-blue-600 shadow-[0_0_10px_rgba(59,130,246,0.2)]" />
+                          </div>
+                       </div>
+                    ))}
+                 </div>
+              </section>
 
-          {/* Completed lessons list */}
-          <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}>
-            <div className="card p-6 h-full">
-              <h2 className="font-heading text-sm font-700 tracking-wider text-white/70 mb-6">COMPLETED LESSONS</h2>
-              {!loading && lessons === 0 && challenges === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <Trophy className="w-12 h-12 mb-4 text-white/10" />
-                  <p className="text-sm font-mono text-white/25">No activity yet</p>
-                  <p className="text-xs text-white/15 mt-1 mb-5">Complete lessons to see progress here</p>
-                  <Link href="/learn" className="btn-neon btn-neon-solid py-2.5 px-5 text-[11px]">
-                    Start Learning <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                  {profile?.completedLessons?.map((l, i) => (
-                    <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/3 border border-white/5">
-                      <div className="w-5 h-5 rounded-full bg-[rgba(0,255,135,0.15)] flex items-center justify-center flex-shrink-0">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--neon-green)]" />
-                      </div>
-                      <span className="text-xs font-mono text-white/50 capitalize">{l.replace(/-/g, " · ")}</span>
-                    </div>
-                  ))}
-                  {profile?.completedChallenges?.map((c, i) => (
-                    <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/3 border border-white/5">
-                      <div className="w-5 h-5 rounded-full bg-[rgba(191,95,255,0.15)] flex items-center justify-center flex-shrink-0">
-                        <Bug className="w-2.5 h-2.5 text-[var(--neon-violet)]" />
-                      </div>
-                      <span className="text-xs font-mono text-white/50">{c}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </motion.div>
+              {/* Achievements */}
+              <section>
+                 <h2 className="text-[10px] font-bold text-white uppercase tracking-[0.3em] mb-10 flex items-center gap-3">
+                    <Award className="w-4 h-4 text-blue-500" /> My Achievements
+                 </h2>
+                 <div className="flex flex-wrap gap-6">
+                    {stats?.badges?.length > 0 ? stats.badges.map((b: string) => (
+                       <div key={b} className="group relative">
+                          <div className="w-20 h-20 rounded-[24px] bg-white/[0.02] border border-white/10 flex items-center justify-center p-4 group-hover:border-amber-500/30 group-hover:bg-amber-500/5 transition-all">
+                             <Star className="w-full h-full text-gray-800 group-hover:text-amber-500 transition-colors" />
+                          </div>
+                          <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 bg-black border border-white/10 px-4 py-2 rounded-xl text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 font-bold uppercase tracking-widest shadow-2xl">{b}</div>
+                       </div>
+                    )) : (
+                      <p className="text-[12px] text-gray-700 italic font-light tracking-wide px-4 py-8 border border-dashed border-white/5 rounded-2xl w-full text-center uppercase">No active lessons archived. Start a track to begin.</p>
+                    )}
+                 </div>
+              </section>
+           </div>
+
+           {/* Stats / Activity Side */}
+           <aside className="space-y-10">
+              <div className="p-8 rounded-2xl border border-white/5 bg-white/[0.01]">
+                 <h3 className="text-[10px] font-bold text-gray-700 uppercase tracking-[0.3em] mb-10">Neural Log Feed</h3>
+                 <div className="space-y-8">
+                    {[1,2,3].map(i => (
+                       <div key={i} className="flex gap-5 group items-center">
+                          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center shrink-0 group-hover:border-blue-500/20 group-hover:bg-blue-500/5 transition-all">
+                             <Zap className="w-4 h-4 text-gray-800 group-hover:text-blue-500 transition-colors" />
+                          </div>
+                          <div>
+                             <p className="text-[11px] font-bold text-gray-400 leading-tight uppercase tracking-tight group-hover:text-white transition-colors">Lesson Completed</p>
+                             <p className="text-[9px] font-bold text-gray-800 uppercase tracking-widest mt-1.5">{i}h AGO</p>
+                          </div>
+                       </div>
+                    ))}
+                 </div>
+                 <button className="w-full mt-12 py-3.5 rounded-xl border border-white/10 text-[10px] font-bold text-gray-700 uppercase tracking-widest hover:bg-white/5 hover:text-white transition-all">Full Log History</button>
+              </div>
+
+              <div className="p-8 rounded-2xl bg-blue-600 border border-blue-400 relative overflow-hidden group">
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-[40px] rounded-full pointer-events-none" />
+                 <Rocket className="w-7 h-7 text-white mb-6 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                 <h4 className="text-white text-base font-bold mb-3 uppercase tracking-tight">ELEVATE TO PRIME</h4>
+                 <p className="text-[12px] text-blue-100 leading-relaxed mb-10 font-medium">Unlock hyper-intelligent AI coaching and elite-tier certifications.</p>
+                 <button className="w-full bg-white text-blue-600 py-3.5 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-50 shadow-xl transition-all">INITIATE UPGRADE</button>
+              </div>
+           </aside>
         </div>
       </div>
     </AuthGuard>

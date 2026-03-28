@@ -5,32 +5,25 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        heading: ["var(--font-heading)","monospace"],
-        body: ["var(--font-body)","sans-serif"],
-        mono: ["var(--font-mono)","monospace"],
+        heading: ["Poppins", "sans-serif"],
+        body: ["Inter", "sans-serif"],
+        mono: ["Fira Code", "monospace"],
       },
       colors: {
-        neon: {
-          green: "#00ff87",
-          lime: "#a3ff00",
-          violet: "#bf5fff",
-          cyan: "#00e5ff",
-          orange: "#ff6b2b",
-          pink: "#ff2d78",
-        },
-        void: {
-          50: "#f0f0f5",
-          100: "#d1d0e0",
-          200: "#a3a0c8",
-          300: "#7570b0",
-          400: "#474398",
-          500: "#1a1730",
-          600: "#13112a",
-          700: "#0e0c20",
-          800: "#080717",
-          900: "#04040e",
-          950: "#020208",
-        },
+        brand: {
+          bg: {
+            primary: "#0B1120",
+            secondary: "#111827",
+          },
+          accent: {
+            DEFAULT: "#3B82F6",
+            hover: "#2563EB",
+          },
+          text: {
+            primary: "#E5E7EB",
+            secondary: "#9CA3AF",
+          }
+        }
       },
       keyframes: {
         "scan-line": {

@@ -2,7 +2,7 @@
 
 # ⚡ CodeBuddy
 
-### Gamified Coding Learning Platform
+### Interactive Coding Learning Platform
 
 **Learn Python, HTML & CSS through interactive lessons, real debugging challenges, and AI-powered assistance.**
 
@@ -20,7 +20,7 @@
 
 ## 📸 Overview
 
-CodeBuddy is a full-stack gamified learning platform where developers earn XP, maintain streaks, and level up by completing interactive coding lessons and debugging challenges — with an AI assistant always one click away.
+CodeBuddy is a full-stack interactive learning platform where developers earn XP, maintain streaks, and level up by completing interactive coding lessons and debugging challenges — with an AI assistant always one click away.
 
 ---
 
@@ -41,11 +41,11 @@ CodeBuddy is a full-stack gamified learning platform where developers earn XP, m
 - XP automatically saved to Firebase on correct submission
 
 ### 🤖 AI Code Assistant
-- **Floating chatbot** (bottom-right) available on every page
-- Powered by **Groq llama-3.3-70b** — ultra-fast responses
+- **Architect Intelligence** (bottom-right) available on every page
+- Powered by **Groq llama-3.3-70b** — ultra-fast industrial core
 - Renders inline code, bold text, and multi-line formatting
 - Unread message badge, clear chat, auto-resize input
-- Full-screen AI chat modal also available from the Home page
+- Dedicated full-screen AI console also available
 
 ### 🗺️ Career Roadmaps
 - **Python Developer** path (8 weeks)
@@ -81,11 +81,11 @@ CodeBuddy is a full-stack gamified learning platform where developers earn XP, m
 | Animations | Framer Motion |
 | Auth | Firebase Authentication |
 | Database | Firebase Firestore |
-| AI | Groq API (llama-3.3-70b-versatile) |
+| AI | Architect Intelligence (Groq llama-3.3-70b) |
 | Charts | Recharts |
 | Toasts | Sonner |
 | Icons | Lucide React |
-| Fonts | Orbitron · Outfit · Fira Code |
+| Fonts | Poppins · Inter · Fira Code |
 
 ---
 
@@ -225,20 +225,20 @@ firebase deploy --only hosting
 
 ## 🎨 Design System
 
-CodeBuddy uses a custom **Neon Noir** theme — no component library required.
+CodeBuddy Professional uses a custom **Dark-Blue SaaS** design system curated for industrial-grade readability.
 
 | Token | Value | Usage |
 |---|---|---|
-| `--neon-green` | `#00ff87` | Primary actions, success |
-| `--neon-violet` | `#bf5fff` | HTML track, secondary |
-| `--neon-cyan` | `#00e5ff` | CSS track, info |
-| `--neon-orange` | `#ff6b2b` | Practice/debug, warnings |
-| `--neon-pink` | `#ff2d78` | Hard difficulty, errors |
-| `--void-950` | `#020208` | Background |
+| `--brand-bg-primary` | `#0B1120` | Core Background |
+| `--brand-bg-secondary` | `#111827` | Module Background |
+| `--brand-accent` | `#3B82F6` | Primary Actions / Success |
+| `--brand-accent-hover` | `#2563EB` | Interactive States |
+| `--text-primary` | `#E5E7EB` | High Contrast Text |
+| `--text-secondary` | `#9CA3AF` | Supportive Metadata |
 
-**Fonts:** `Orbitron` (headings) · `Outfit` (body) · `Fira Code` (mono)
+**Fonts:** `Poppins` (headings) · `Inter` (body) · `Fira Code` (mono)
 
-**Key utility classes:** `.card`, `.btn-neon`, `.btn-neon-solid`, `.badge-*`, `.terminal`, `.input-neon`, `.progress-track`, `.gradient-heading`
+**Key utility classes:** `.glass-panel`, `.glass-card`, `.btn-primary`, `.btn-secondary`, `.gradient-text`, `.skeleton`
 
 ---
 

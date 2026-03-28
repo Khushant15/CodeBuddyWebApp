@@ -1,154 +1,81 @@
 // lib/userService.ts
-import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  arrayUnion,
-  increment,
-  serverTimestamp,
-  getFirestore,
-} from "firebase/firestore";
-import { initializeApp, getApps } from "firebase/app";
-
-const firebaseConfig = {
-  apiKey:            process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
-  authDomain:        process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
-  projectId:         process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
-  storageBucket:     process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
-  appId:             process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
-  measurementId:     process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-};
-
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-export const db = getFirestore(app);
+import { authAPI, lessonsAPI, practiceAPI, progressAPI } from './apiClient';
 
 export interface UserProfile {
-  uid: string;
+  firebaseUID: string;
   email: string;
   displayName: string;
   xp: number;
-  level: number;
   streak: number;
-  lastActiveDate: string;
-  completedLessons: string[];   // e.g. ["python-1", "html-2"]
-  completedChallenges: string[]; // e.g. ["challenge-1"]
-  chatHistory: ChatMessage[];
-  createdAt: unknown;
-  updatedAt: unknown;
+  completedLessons: string[];
+  solvedProblems: string[];
+  testScores: Record<string, number>;
 }
 
-export interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
-  ts: number;
-}
-
-// Create or fetch user profile
+// Create or fetch user profile (Sync with backend)
 export async function getOrCreateUserProfile(
   uid: string,
   email: string,
   displayName: string
-): Promise<UserProfile> {
-  const ref = doc(db, "users", uid);
-  const snap = await getDoc(ref);
+): Promise<any> {
+  const response = await authAPI.sync({ firebaseUID: uid, email, displayName });
+  return response.data; // Returns { user, progress }
+}
 
-  if (snap.exists()) {
-    return snap.data() as UserProfile;
-  }
-
-  const profile: UserProfile = {
-    uid,
-    email,
-    displayName,
-    xp: 0,
-    level: 1,
-    streak: 0,
-    lastActiveDate: new Date().toISOString().split("T")[0],
-    completedLessons: [],
-    completedChallenges: [],
-    chatHistory: [],
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  };
-
-  await setDoc(ref, profile);
-  return profile;
+// Update user streak
+export async function updateStreak(uid: string): Promise<void> {
+  // In this architecture, getting stats triggers a streak update on the backend
+  await progressAPI.getStats(uid);
 }
 
 // Mark a lesson complete and award XP
-export async function completeLessonInFirebase(
+export async function completeLessonInBackend(
   uid: string,
-  lessonKey: string,
+  lessonSlug: string,
   xpReward: number
 ): Promise<void> {
-  const ref = doc(db, "users", uid);
-  await updateDoc(ref, {
-    completedLessons: arrayUnion(lessonKey),
-    xp: increment(xpReward),
-    updatedAt: serverTimestamp(),
+  await progressAPI.complete({
+    firebaseUID: uid,
+    itemId: lessonSlug,
+    itemType: 'lesson',
+    xpReward
   });
 }
 
 // Mark a challenge complete and award XP
-export async function completeChallengeInFirebase(
+export async function completeChallengeInBackend(
   uid: string,
-  challengeKey: string,
+  problemId: string,
   xpReward: number
 ): Promise<void> {
-  const ref = doc(db, "users", uid);
-  await updateDoc(ref, {
-    completedChallenges: arrayUnion(challengeKey),
-    xp: increment(xpReward),
-    updatedAt: serverTimestamp(),
+  await progressAPI.complete({
+    firebaseUID: uid,
+    itemId: problemId,
+    itemType: 'challenge',
+    xpReward
   });
 }
 
-// Update streak (call on each daily visit)
-export async function updateStreak(uid: string): Promise<void> {
-  const ref = doc(db, "users", uid);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return;
-
-  const data = snap.data() as UserProfile;
-  const today = new Date().toISOString().split("T")[0];
-  const last = data.lastActiveDate;
-
-  if (last === today) return; // already updated today
-
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yStr = yesterday.toISOString().split("T")[0];
-
-  const newStreak = last === yStr ? data.streak + 1 : 1;
-
-  await updateDoc(ref, {
-    streak: newStreak,
-    lastActiveDate: today,
-    updatedAt: serverTimestamp(),
-  });
-}
-
-// Append a chat message to user's history (keep last 50)
-export async function saveChatMessage(
+// Save test result
+export async function saveTestResult(
   uid: string,
-  msg: ChatMessage
+  testSlug: string,
+  score: number,
+  xpReward: number
 ): Promise<void> {
-  const ref = doc(db, "users", uid);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return;
-
-  const data = snap.data() as UserProfile;
-  const history = [...(data.chatHistory || []), msg].slice(-50);
-
-  await updateDoc(ref, {
-    chatHistory: history,
-    updatedAt: serverTimestamp(),
+  await progressAPI.complete({
+    firebaseUID: uid,
+    itemId: testSlug,
+    itemType: 'test',
+    xpReward
   });
+  // Note: If you want to save the actual score, you'd need a more specific API call
+  // For now, using the generalized complete API
 }
 
 // Recompute level from XP (100 XP per level)
 export function xpToLevel(xp: number): number {
   return Math.floor(xp / 100) + 1;
 }
+
+// Note: Removed Firestore specific imports and logic to decouple frontend from DB.

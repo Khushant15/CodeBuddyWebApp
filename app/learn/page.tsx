@@ -1,123 +1,107 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Code, Globe, Palette, ArrowRight, Clock, Lock, BookOpen, Zap, Database, CheckCircle } from "lucide-react";
+import { Code, Globe, Palette, ArrowRight, Clock, Lock, BookOpen, Zap, Database, CheckCircle, Terminal, Layout, Layers, Hash } from "lucide-react";
 import Link from "next/link";
 import { AuthGuard } from "@/components/AuthGuard";
+import { auth } from "@/app/firebase/config";
+import { onAuthStateChanged } from "firebase/auth";
+import { progressAPI, lessonsAPI } from "@/lib/apiClient";
+import { TracksGrid } from "@/components/TracksGrid";
 
 export default function LearnPage() {
-  const [activeTrack, setActiveTrack] = useState("python");
+  const [stats, setStats] = useState<any>(null);
+  const [tracksProgress, setTracksProgress] = useState<any>({});
+  const [trackTotals, setTrackTotals] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      if (u) {
+        try {
+          const [progRes, countsRes] = await Promise.all([
+            progressAPI.getStats(u.uid),
+            lessonsAPI.getCounts()
+          ]);
+          setStats(progRes.data);
+          setTrackTotals(countsRes.data);
+          
+          // Basic progress mapping
+          const prog: any = {};
+          const allTracks = ['python', 'html', 'css', 'javascript', 'react', 'node', 'dsa'];
+          for (const t of allTracks) {
+             const done = progRes.data.completedLessons?.filter((l: string) => l.startsWith(t)).length || 0;
+             prog[t] = done;
+          }
+          setTracksProgress(prog);
+        } catch (err) {
+          console.error("Failed to fetch learn stats:", err);
+        }
+      }
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  const sysStats = [
+    { label: "Lessons Done", value: stats?.completedLessons?.length || "0", color: "text-white" },
+    { label: "Active Tracks", value: "7", color: "text-blue-500" },
+    { label: "Total XP", value: stats?.xp || "0", color: "text-indigo-400" },
+    { label: "Streak", value: (stats?.streak || "0") + "d", color: "text-white" },
+  ];
 
   return (
     <AuthGuard>
-    <div className="container py-10">
-      {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
-        <p className="text-[11px] font-mono text-[var(--neon-green)] uppercase tracking-widest mb-2">Learning Tracks</p>
-        <h1 className="font-heading text-3xl md:text-5xl font-800 text-white mb-4">
-          LEARN TO <span className="gradient-heading">CODE</span>
+    <div className="container py-12">
+      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
+        <p className="text-[10px] font-bold text-blue-500 uppercase tracking-[0.2em] mb-2">Learning System</p>
+        <h1 className="font-heading text-3xl md:text-5xl font-800 text-white mb-4 uppercase tracking-tight">
+          LEARN TO <span className="text-blue-500">CODE</span>
         </h1>
-        <p className="text-white/40 max-w-xl text-sm leading-relaxed">
-          Structured, interactive courses designed to take you from zero to developer.
-          Choose a track and start your journey.
+        <p className="text-slate-500 max-w-xl text-sm leading-relaxed font-light">
+          A structures, multi-track curriculum engineered for modern software engineering. From foundational logic to professional SaaS mastery.
         </p>
       </motion.div>
 
-      {/* System stats */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+      {/* Stats Dashboard */}
+      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-14">
         {sysStats.map((s, i) => (
-          <div key={s.label} className={`card ${s.cardClass} p-4 text-center`} style={{ animationDelay: `${i * 0.08}s` }}>
-            <div className={`text-xl font-heading font-800 ${s.color}`}>{s.value}</div>
-            <div className="text-[10px] font-mono text-white/30 mt-1 uppercase tracking-wider">{s.label}</div>
+          <div key={s.label} className="p-6 rounded-xl bg-[#0f172a] border border-slate-700 hover:border-blue-500/20 transition-all duration-300">
+            <div className={`text-2xl font-heading font-800 ${s.color}`}>{s.value}</div>
+            <div className="text-[9px] font-bold text-slate-500 mt-1 uppercase tracking-widest">{s.label}</div>
           </div>
         ))}
       </motion.div>
 
-      {/* Track selector */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mb-10">
-        <h2 className="font-heading text-xs font-700 tracking-widest text-white/40 mb-5 uppercase">Choose Your Track</h2>
-        <div className="grid md:grid-cols-3 gap-5">
-          {tracks.map((t, i) => (
-            <motion.div key={t.slug} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.1 }}>
-            <Link href={`/learn/${t.slug}`}
-              className={`card text-left p-6 transition-all block ${t.cardClass} ${activeTrack === t.slug ? "ring-1 ring-[var(--neon-green)] ring-offset-0" : ""}`}
-            >
-              {/* Terminal header */}
-              <div className="flex items-center gap-1.5 mb-4 pb-3 border-b border-white/6">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-[#28ca42]" />
-                <span className="ml-2 text-[10px] font-mono text-white/25">{t.slug}.course</span>
-              </div>
-
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${t.iconBg}`}>
-                <t.icon className={`w-6 h-6 ${t.iconColor}`} />
-              </div>
-              <h3 className={`font-heading text-base font-700 tracking-wider mb-1.5 ${t.titleColor}`}>{t.title}</h3>
-              <p className="text-xs text-white/40 mb-4 leading-relaxed">{t.desc}</p>
-
-              <div className="space-y-2.5 mb-4">
-                <div className="flex justify-between text-[10px] font-mono text-white/30">
-                  <span>Progress</span><span className={t.titleColor}>{t.progress}%</span>
-                </div>
-                <div className="progress-track">
-                  <div className="progress-fill" style={{ width: `${t.progress}%`, background: `linear-gradient(90deg, ${t.gradFrom}, ${t.gradTo})` }} />
-                </div>
-                <div className="flex justify-between text-[10px] font-mono text-white/25">
-                  <span>{t.completed}/{t.total} modules</span>
-                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{t.duration}</span>
-                </div>
-              </div>
-
-              <div className={`btn-neon w-full justify-center py-2.5 text-[10px] ${t.btnClass}`}>
-                {t.progress > 0 ? "Continue" : "Initialize"} <ArrowRight className="w-3.5 h-3.5" />
-              </div>
-            </Link>
-            </motion.div>
-          ))}
+      {/* Tracks Section */}
+      <div className="mb-14">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-[10px] font-bold tracking-[0.3em] text-slate-500 uppercase">AVAILABLE TRACKS</h2>
+          <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+             Ecosystem Live
+          </div>
         </div>
-      </motion.div>
+        
+        {loading ? (
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-64 rounded-2xl bg-[#0f172a] border border-slate-700 animate-pulse" />
+              ))}
+           </div>
+        ) : (
+          <TracksGrid tracksProgress={tracksProgress} trackTotals={trackTotals} />
+        )}
+      </div>
 
-      {/* Lesson preview */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-10">
-        <div className="flex items-center gap-3 mb-5">
-          <Database className="w-5 h-5 text-[var(--neon-green)]" />
-          <h2 className="font-heading text-xs font-700 tracking-widest text-white/50 uppercase">Available Lessons Preview</h2>
-        </div>
-        <div className="grid md:grid-cols-2 gap-4">
-          {previewLessons.map((l, i) => (
-            <motion.div key={l.id} initial={{ opacity: 0, x: -16 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }} viewport={{ once: true }}>
-              <div className="card p-4 flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${l.locked ? "bg-white/5" : "bg-[rgba(0,255,135,0.1)]"}`}>
-                  {l.locked ? <Lock className="w-4 h-4 text-white/20" /> : <CheckCircle className="w-4 h-4 text-[var(--neon-green)]" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`badge ${l.trackBadge} text-[9px]`}>{l.track}</span>
-                    <span className={`badge ${l.diffBadge} text-[9px]`}>{l.diff}</span>
-                  </div>
-                  <h4 className="text-sm font-mono text-white/70 truncate">{l.title}</h4>
-                  <p className="text-[11px] text-white/30 mt-0.5">{l.desc}</p>
-                </div>
-                <div className="flex items-center gap-1 text-[10px] font-mono text-white/25 flex-shrink-0">
-                  <Clock className="w-3 h-3" />{l.time}
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Getting started CTA */}
-      <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-        <div className="card p-8 text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-[rgba(0,255,135,0.03)] to-[rgba(0,229,255,0.02)]" />
-          <BookOpen className="w-10 h-10 mx-auto mb-4" style={{ color: "var(--neon-green)" }} />
-          <h3 className="font-heading text-xl font-700 tracking-wider text-white mb-2">START YOUR JOURNEY</h3>
-          <p className="text-sm text-white/40 mb-6 max-w-md mx-auto">Pick a track above and begin learning. All lessons are interactive with code examples, quizzes, and challenges.</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/learn" className="btn-neon btn-neon-solid px-6 py-3 text-[11px] justify-center"><Play className="w-3.5 h-3.5" />Start Python</Link>
-            <Link href="/practice" className="btn-neon px-6 py-3 text-[11px] justify-center">View Challenges</Link>
+      <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+        <div className="glass-panel p-10 text-center relative overflow-hidden bg-brand-bg-secondary/40 border-white/5">
+          <BookOpen className="w-10 h-10 mx-auto mb-6 text-blue-500/40" />
+          <h3 className="font-heading text-2xl font-800 tracking-tight text-white mb-3 uppercase">INDUSTRIAL CURRICULUM</h3>
+          <p className="text-sm text-gray-500 mb-8 max-w-lg mx-auto leading-relaxed font-light">Every track contains interactive architecture, live code examples, and technical assessments that automatically track your progress on the roadmap.</p>
+          <div className="flex gap-4 justify-center">
+            <Link href="/roadmap" className="btn-primary px-8 py-3 text-[11px]">View Roadmap</Link>
+            <Link href="/practice" className="btn-secondary px-8 py-3 text-[11px]">Practice Arena</Link>
           </div>
         </div>
       </motion.div>
@@ -125,25 +109,3 @@ export default function LearnPage() {
     </AuthGuard>
   );
 }
-
-function Play(props: React.ComponentProps<typeof Zap>) { return <Zap {...props} />; }
-
-const sysStats = [
-  { label: "Lessons", value: "0", color: "neon-text-green", cardClass: "" },
-  { label: "Tracks", value: "3", color: "neon-text-cyan", cardClass: "card-cyan" },
-  { label: "XP Earned", value: "0", color: "neon-text-violet", cardClass: "card-violet" },
-  { label: "Streak", value: "0d", color: "neon-text-orange", cardClass: "" },
-];
-
-const tracks = [
-  { title: "Python", slug: "python", desc: "Learn programming fundamentals, data structures, and algorithms with Python.", icon: Code, cardClass: "", iconBg: "bg-[rgba(0,255,135,0.1)]", iconColor: "text-[var(--neon-green)]", titleColor: "neon-text-green", progress: 0, completed: 0, total: 6, duration: "40h", gradFrom: "var(--neon-green)", gradTo: "var(--neon-cyan)", btnClass: "" },
-  { title: "HTML", slug: "html", desc: "Build web pages with semantic HTML5 markup and modern web standards.", icon: Globe, cardClass: "card-violet", iconBg: "bg-[rgba(191,95,255,0.1)]", iconColor: "text-[var(--neon-violet)]", titleColor: "neon-text-violet", progress: 0, completed: 0, total: 6, duration: "25h", gradFrom: "var(--neon-violet)", gradTo: "var(--neon-pink)", btnClass: "btn-violet" },
-  { title: "CSS", slug: "css", desc: "Master modern CSS, flexbox, grid, animations, and responsive design.", icon: Palette, cardClass: "card-cyan", iconBg: "bg-[rgba(0,229,255,0.1)]", iconColor: "text-[var(--neon-cyan)]", titleColor: "neon-text-cyan", progress: 0, completed: 0, total: 6, duration: "35h", gradFrom: "var(--neon-cyan)", gradTo: "var(--neon-green)", btnClass: "border-[var(--neon-cyan)] text-[var(--neon-cyan)]" },
-];
-
-const previewLessons = [
-  { id: 1, title: "variables_basics.py", desc: "Variables, data types, and basic operations", track: "PYTHON", trackBadge: "badge-green", diff: "BEGINNER", diffBadge: "badge-cyan", time: "30m", locked: false },
-  { id: 2, title: "html_structure.html", desc: "Document structure and semantic elements", track: "HTML", trackBadge: "badge-violet", diff: "BEGINNER", diffBadge: "badge-cyan", time: "25m", locked: false },
-  { id: 3, title: "css_selectors.css", desc: "Selectors, properties, and basic styling", track: "CSS", trackBadge: "badge-cyan", diff: "BEGINNER", diffBadge: "badge-cyan", time: "35m", locked: true },
-  { id: 4, title: "control_flow.py", desc: "If statements, loops, and conditional logic", track: "PYTHON", trackBadge: "badge-green", diff: "BEGINNER", diffBadge: "badge-cyan", time: "40m", locked: true },
-];

@@ -1,128 +1,129 @@
+// c:\Users\Administrator\OneDrive\Desktop\Projects\codebuddy_final\codebuddy\components\AIChat.tsx
 "use client";
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, MessageCircle, Bot, User, Loader2 } from "lucide-react";
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MessageSquare, X, Send, Bot, User, Loader2, Sparkles, MinusSquare, Maximize2 } from 'lucide-react';
+import { aiAPI } from '@/lib/apiClient';
 
-interface Message { role: "user" | "assistant"; content: string; }
-
-interface AIChatProps { onClose: () => void; }
-
-export function AIChat({ onClose }: AIChatProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Hey developer! 👋 I'm CodeBuddy AI. Ask me anything — debugging help, code explanations, algorithms, or best practices. What are you working on?" }
-  ]);
+export const AIChat = ({ context, onClose }: { context?: string, onClose?: () => void }) => {
+  const [isOpen, setIsOpen] = useState(true); // Default to true if managed by parent
+  const [minimized, setMinimized] = useState(false);
+  const [messages, setMessages] = useState<{role: string, content: string}[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const chatRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => {
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [messages, loading]);
 
-  const send = async () => {
-    const msg = input.trim();
-    if (!msg || loading) return;
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
+    const userMsg = { role: "user", content: input };
+    setMessages([...messages, userMsg]);
     setInput("");
-    setMessages(prev => [...prev, { role: "user", content: msg }]);
     setLoading(true);
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg }),
-      });
-      const data = await res.json();
-      setMessages(prev => [...prev, { role: "assistant", content: data.reply || data.error || "Error getting response." }]);
-    } catch {
-      setMessages(prev => [...prev, { role: "assistant", content: "Connection error. Please check your network." }]);
-    } finally { setLoading(false); }
-  };
 
-  const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+    try {
+      const res = await aiAPI.chat({
+        message: input,
+        history: messages,
+        context: context
+      });
+      setMessages(prev => [...prev, { role: "assistant", content: res.data.response }]);
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        setMessages(prev => [...prev, { role: "assistant", content: "Architecture access requires an active session. Please **login** or **sign up** to chat with CodeBuddy." }]);
+      } else {
+        setMessages(prev => [...prev, { role: "assistant", content: "Sorry, I'm having trouble connecting to the Architect Core right now. Please try again later." }]);
+      }
+    }
+    setLoading(false);
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
-      style={{ background: "rgba(2,2,8,0.85)", backdropFilter: "blur(8px)" }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 40, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20 }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="w-full max-w-2xl h-[80vh] md:h-[600px] flex flex-col"
-        style={{ background: "rgba(8,7,23,0.97)", border: "1px solid rgba(0,255,135,0.18)", borderRadius: 16 }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(0,255,135,0.1)]">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[rgba(191,95,255,0.12)] border border-[rgba(191,95,255,0.25)] flex items-center justify-center">
-              <Bot className="w-4.5 h-4.5" style={{ color: "var(--neon-violet)" }} />
-            </div>
-            <div>
-              <div className="font-heading text-xs font-700 tracking-wider text-white">CODEBUDDY AI</div>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-[var(--neon-green)]" style={{ boxShadow: "0 0 6px var(--neon-green)" }} />
-                <span className="text-[10px] font-mono text-white/35">Groq · llama-3.3-70b</span>
-              </div>
-            </div>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white hover:bg-white/8 transition-all">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-          {messages.map((m, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={`flex gap-3 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${m.role === "assistant" ? "bg-[rgba(191,95,255,0.12)] border border-[rgba(191,95,255,0.2)]" : "bg-[rgba(0,255,135,0.1)] border border-[rgba(0,255,135,0.2)]"}`}>
-                {m.role === "assistant"
-                  ? <Bot className="w-3.5 h-3.5" style={{ color: "var(--neon-violet)" }} />
-                  : <User className="w-3.5 h-3.5" style={{ color: "var(--neon-green)" }} />}
-              </div>
-              <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${m.role === "assistant" ? "bg-[rgba(255,255,255,0.04)] border border-white/6 text-white/80" : "bg-[rgba(0,255,135,0.08)] border border-[rgba(0,255,135,0.15)] text-white/85"}`}
-                style={{ fontFamily: "var(--font-body)", whiteSpace: "pre-wrap" }}>
-                {m.content}
-              </div>
-            </motion.div>
-          ))}
-          {loading && (
-            <div className="flex gap-3">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[rgba(191,95,255,0.12)] border border-[rgba(191,95,255,0.2)]">
-                <Bot className="w-3.5 h-3.5" style={{ color: "var(--neon-violet)" }} />
-              </div>
-              <div className="px-4 py-3 rounded-2xl bg-[rgba(255,255,255,0.04)] border border-white/6 flex items-center gap-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--neon-violet)]" />
-                <span className="text-xs font-mono text-white/30">Thinking...</span>
-              </div>
-            </div>
-          )}
-          <div ref={bottomRef} />
-        </div>
-
-        {/* Input */}
-        <div className="px-5 pb-5 pt-3 border-t border-[rgba(0,255,135,0.08)]">
-          <div className="flex gap-3">
-            <textarea
-              ref={inputRef}
-              rows={1}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKey}
-              placeholder="Ask a coding question… (Enter to send)"
-              className="input-neon flex-1 resize-none min-h-[44px] max-h-[120px] py-3"
-              style={{ lineHeight: 1.5 }}
-            />
-            <button onClick={send} disabled={!input.trim() || loading}
-              className="btn-neon btn-neon-solid w-11 h-11 p-0 flex-shrink-0 rounded-xl self-end justify-center">
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
-          <p className="text-[10px] font-mono text-white/20 mt-2 text-center">⇧↵ for new line · ↵ to send</p>
-        </div>
-      </motion.div>
-    </motion.div>
+    <div className="fixed bottom-6 right-6 z-[9999]">
+      <AnimatePresence>
+        {!isOpen ? (
+          <motion.button initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} whileHover={{ scale: 1.05 }} onClick={() => setIsOpen(true)} className="w-14 h-14 rounded-full bg-blue-600 shadow-2xl flex items-center justify-center text-white border border-white/10 hover:bg-blue-500 transition-colors">
+             <MessageSquare className="w-6 h-6" />
+          </motion.button>
+        ) : (
+          <motion.div initial={{ opacity: 0, y: 50, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 50, scale: 0.9 }} className={`glass-panel p-0 flex flex-col border-white/10 shadow-2xl bg-brand-bg-secondary/95 backdrop-blur-3xl overflow-hidden transition-all duration-300 ${minimized ? 'h-16 w-72' : 'h-[550px] w-[380px]'}`}>
+             {/* Header */}
+             <div className="p-4 bg-white/[0.03] border-b border-white/5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                   <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20">
+                      <Bot className="w-4 h-4" />
+                   </div>
+                   <div>
+                      <h4 className="text-xs font-bold text-white leading-none">AI CodeBuddy</h4>
+                      <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest mt-1">Operational</p>
+                   </div>
+                </div>
+                <div className="flex items-center gap-1">
+                   <button onClick={() => setMinimized(!minimized)} className="p-1.5 text-white/20 hover:text-white transition-colors">
+                      {minimized ? <Maximize2 className="w-4 h-4" /> : <MinusSquare className="w-4 h-4" />}
+                   </button>
+                   <button onClick={() => { setIsOpen(false); onClose?.(); }} className="p-1.5 text-white/20 hover:text-white transition-colors">
+                      <X className="w-4 h-4" />
+                   </button>
+                </div>
+             </div>
+ 
+             {!minimized && (
+               <>
+                 {/* Body */}
+                 <div ref={chatRef} className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                    {messages.length === 0 && (
+                       <div className="h-full flex flex-col items-center justify-center text-center px-6">
+                          <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
+                             <Sparkles className="w-6 h-6 text-blue-400/40" />
+                          </div>
+                          <p className="text-xs text-gray-500 leading-relaxed font-light">I'm your AI tutor. Ask me anything about {context || 'coding'}!</p>
+                       </div>
+                    )}
+                    {messages.map((m, i) => (
+                       <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[85%] p-3 px-4 rounded-2xl text-[13px] leading-relaxed ${m.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white/5 text-gray-300 border border-white/5 rounded-tl-none'}`}>
+                             {m.content}
+                          </div>
+                       </div>
+                    ))}
+                    {loading && (
+                       <div className="flex justify-start">
+                          <div className="bg-white/5 p-3 px-5 rounded-2xl border border-white/5 flex gap-1">
+                             <span className="w-1.5 h-1.5 rounded-full bg-blue-500/40 animate-bounce [animation-delay:-0.3s]" />
+                             <span className="w-1.5 h-1.5 rounded-full bg-blue-500/40 animate-bounce [animation-delay:-0.15s]" />
+                             <span className="w-1.5 h-1.5 rounded-full bg-blue-500/40 animate-bounce" />
+                          </div>
+                       </div>
+                    )}
+                 </div>
+ 
+                 {/* Footer */}
+                 <div className="p-4 bg-white/[0.02] border-t border-white/5">
+                    <div className="bg-white/5 rounded-2xl border border-white/5 p-1 flex items-center gap-1 focus-within:border-blue-500/50 transition-all">
+                       <input 
+                          type="text" 
+                          placeholder="Type your question..." 
+                          className="flex-1 bg-transparent border-none focus:ring-0 text-xs px-3 text-white placeholder:text-gray-600"
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                       />
+                       <button onClick={handleSend} disabled={!input.trim() || loading} className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white hover:bg-blue-500 transition-all disabled:opacity-50">
+                          <Send className="w-3.5 h-3.5" />
+                       </button>
+                    </div>
+                 </div>
+               </>
+             )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
-}
+};

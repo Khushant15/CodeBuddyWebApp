@@ -5,6 +5,7 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight, Chrome, User } from "lucide-react"
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signupWithEmail, loginWithGoogle } from "@/app/firebase/authMethods";
+import { getOrCreateUserProfile } from "@/lib/userService";
 import { toast } from "sonner";
 
 export default function SignupPage() {
@@ -29,12 +30,15 @@ export default function SignupPage() {
     if (Object.keys(e).length) { setErrors(e); return; }
     setLoading(true);
     try {
-      await signupWithEmail(form.email, form.password);
-      toast.success("Account created! Let's code.");
+      const user = await signupWithEmail(form.email, form.password);
+      if (user) {
+        await getOrCreateUserProfile(user.uid, user.email || "", form.name);
+      }
+      toast.success("Signup successful. Welcome to CodeBuddy.");
       router.push("/home");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Signup failed";
-      setErrors({ email: message.includes("email-already-in-use") ? "Email already registered" : "Signup failed" });
+      const message = err instanceof Error ? err.message : "Registration failed";
+      setErrors({ email: message.includes("email-already-in-use") ? "Account already exists" : "Registration failed" });
     } finally { setLoading(false); }
   };
 
@@ -42,85 +46,90 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await loginWithGoogle();
-      toast.success("Welcome to CodeBuddy!");
+      toast.success("Signup verified.");
       router.push("/home");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Google signup failed";
+      const message = err instanceof Error ? err.message : "Third-party link failed";
       toast.error(message);
     } finally { setLoading(false); }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12">
-      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="w-full max-w-md">
-        <div className="card p-8">
-          <div className="text-center mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-[rgba(0,255,135,0.08)] border border-[rgba(0,255,135,0.2)] flex items-center justify-center mx-auto mb-4">
-              <User className="w-7 h-7" style={{ color: "var(--neon-green)" }} />
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#0B1120]">
+      <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="w-full max-w-md">
+        <div className="p-10 rounded-[32px] border border-white/5 bg-white/[0.01] shadow-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[60px] rounded-full pointer-events-none" />
+          
+          <div className="text-center mb-10">
+            <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-6 text-blue-500 shadow-inner">
+              <User className="w-8 h-8" />
             </div>
-            <h1 className="font-heading text-xl font-700 tracking-wider text-white">CREATE ACCOUNT</h1>
-            <p className="text-sm text-white/35 mt-1 font-mono">Join the developer community</p>
+            <h1 className="text-xl font-bold tracking-[0.2em] text-white uppercase">CodeBuddy Signup</h1>
+            <p className="text-[10px] text-gray-600 mt-3 font-bold uppercase tracking-[0.3em]">Initialize your professional signup</p>
           </div>
 
-          <button onClick={handleGoogle} disabled={loading} className="w-full flex items-center justify-center gap-3 py-3 rounded-lg border border-[rgba(255,255,255,0.1)] bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-sm font-mono transition-all mb-6">
+          <button onClick={handleGoogle} disabled={loading} className="w-full flex items-center justify-center gap-4 py-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] text-gray-400 hover:text-white text-[11px] font-bold uppercase tracking-widest transition-all mb-8 shadow-sm">
             <Chrome className="w-4 h-4" />
             Sign up with Google
           </button>
 
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex-1 h-px bg-white/8" />
-            <span className="text-xs font-mono text-white/25">or</span>
-            <div className="flex-1 h-px bg-white/8" />
+          <div className="flex items-center gap-4 mb-8">
+            <div className="flex-1 h-px bg-white/5" />
+            <span className="text-[9px] font-bold text-gray-800 uppercase tracking-widest">or</span>
+            <div className="flex-1 h-px bg-white/5" />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {[
-              { key: "name", label: "Display Name", icon: User, type: "text", ph: "Your name" },
-              { key: "email", label: "Email", icon: Mail, type: "email", ph: "you@example.com" },
+              { key: "name", label: "Full Name", icon: User, type: "text", ph: "Enter your name" },
+              { key: "email", label: "Email Address", icon: Mail, type: "email", ph: "you@example.com" },
             ].map(f => (
               <div key={f.key}>
-                <label className="flex items-center gap-1.5 text-[11px] font-mono text-[var(--neon-green)] mb-2 uppercase tracking-wider">
-                  <f.icon className="w-3 h-3" /> {f.label}
+                <label className="flex items-center gap-2 text-[10px] font-bold text-gray-700 mb-2.5 uppercase tracking-widest">
+                  <f.icon className="w-3.5 h-3.5" /> {f.label}
                 </label>
                 <input type={f.type} placeholder={f.ph}
                   value={form[f.key as keyof typeof form]}
                   onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                  className="input-neon" />
-                {errors[f.key] && <p className="text-[11px] text-[var(--neon-pink)] mt-1 font-mono">{errors[f.key]}</p>}
+                  className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-5 py-3.5 text-sm text-white placeholder:text-gray-800 focus:outline-none focus:border-blue-500/40 focus:bg-white/[0.04] transition-all" />
+                {errors[f.key] && <p className="text-[10px] text-red-400/80 mt-2 font-bold uppercase tracking-widest">{errors[f.key]}</p>}
               </div>
             ))}
 
             <div>
-              <label className="flex items-center gap-1.5 text-[11px] font-mono text-[var(--neon-green)] mb-2 uppercase tracking-wider">
-                <Lock className="w-3 h-3" /> Password
+              <label className="flex items-center gap-2 text-[10px] font-bold text-gray-700 mb-2.5 uppercase tracking-widest">
+                <Lock className="w-3.5 h-3.5" /> Password
               </label>
               <div className="relative">
-                <input type={showPw ? "text" : "password"} placeholder="Min 6 chars" value={form.password}
-                  onChange={e => setForm({ ...form, password: e.target.value })} className="input-neon pr-12" />
-                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
+                <input type={showPw ? "text" : "password"} placeholder="Min 6 characters" value={form.password}
+                  onChange={e => setForm({ ...form, password: e.target.value })} 
+                  className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-5 py-3.5 text-sm text-white placeholder:text-gray-800 focus:outline-none focus:border-blue-500/40 focus:bg-white/[0.04] transition-all pr-12" />
+                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors">
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              {errors.password && <p className="text-[11px] text-[var(--neon-pink)] mt-1 font-mono">{errors.password}</p>}
+              {errors.password && <p className="text-[10px] text-red-400/80 mt-2 font-bold uppercase tracking-widest">{errors.password}</p>}
             </div>
 
             <div>
-              <label className="flex items-center gap-1.5 text-[11px] font-mono text-[var(--neon-green)] mb-2 uppercase tracking-wider">
-                <Lock className="w-3 h-3" /> Confirm Password
+              <label className="flex items-center gap-2 text-[10px] font-bold text-gray-700 mb-2.5 uppercase tracking-widest">
+                <Lock className="w-3.5 h-3.5" /> Confirm Password
               </label>
-              <input type="password" placeholder="Repeat password" value={form.confirm}
-                onChange={e => setForm({ ...form, confirm: e.target.value })} className="input-neon" />
-              {errors.confirm && <p className="text-[11px] text-[var(--neon-pink)] mt-1 font-mono">{errors.confirm}</p>}
+              <input type="password" placeholder="Repeat access key" value={form.confirm}
+                onChange={e => setForm({ ...form, confirm: e.target.value })} 
+                className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-5 py-3.5 text-sm text-white placeholder:text-gray-800 focus:outline-none focus:border-blue-500/40 focus:bg-white/[0.04] transition-all" />
+              {errors.confirm && <p className="text-[10px] text-red-400/80 mt-2 font-bold uppercase tracking-widest">{errors.confirm}</p>}
             </div>
 
-            <button type="submit" disabled={loading} className="btn-neon btn-neon-solid w-full py-3 mt-2 justify-center">
-              {loading ? "Creating account..." : <><ArrowRight className="w-4 h-4" /> Create Account</>}
+            <button type="submit" disabled={loading} 
+              className="w-full flex items-center justify-center gap-3 py-4 rounded-xl bg-blue-500 text-white text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-blue-600 transition-all shadow-xl shadow-blue-500/10 mt-4 disabled:opacity-50">
+              {loading ? "CREATING ACCOUNT..." : <><ArrowRight className="w-4 h-4" /> Complete Signup</>}
             </button>
           </form>
 
-          <p className="text-center text-xs text-white/30 mt-6 font-mono">
-            Already have an account?{" "}
-            <Link href="/login" className="text-[var(--neon-green)] hover:underline">Login</Link>
+          <p className="text-center text-[10px] text-gray-600 mt-10 font-bold uppercase tracking-widest">
+            Already verified?{" "}
+            <Link href="/login" className="text-blue-500 hover:text-blue-400 transition-colors">Enter sector</Link>
           </p>
         </div>
       </motion.div>

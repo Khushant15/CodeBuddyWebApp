@@ -14,19 +14,18 @@ const WELCOME: Message = {
   id: 0,
   role: "assistant",
   ts: new Date(),
-  content: "Hey! 👋 I'm **CodeBuddy AI** — your personal coding assistant.\n\nAsk me anything:\n• Debug your code\n• Explain concepts\n• Help with exercises\n• Career advice\n\nWhat are you working on?",
+  content: "Greetings. I am the **Architect Intelligence** unit.\n\nI am prepared to assist with:\n• System Debugging\n• Architectural Consultation\n• Logic Optimization\n• Pattern Analysis\n\nSpecify your objective.",
 };
 
 function renderContent(text: string) {
-  // Bold **text**, inline code `code`, and newlines
   return text
     .split("\n")
     .map((line, i) => {
       const parts = line.split(/(`[^`]+`|\*\*[^*]+\*\*)/g).map((part, j) => {
         if (part.startsWith("`") && part.endsWith("`"))
-          return <code key={j} className="bg-[rgba(0,255,135,0.12)] text-[var(--neon-green)] px-1 py-0.5 rounded text-[11px] font-mono">{part.slice(1, -1)}</code>;
+          return <code key={j} className="bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded text-[11px] font-mono border border-blue-500/20">{part.slice(1, -1)}</code>;
         if (part.startsWith("**") && part.endsWith("**"))
-          return <strong key={j} className="text-white/90 font-semibold">{part.slice(2, -2)}</strong>;
+          return <strong key={j} className="text-white font-bold">{part.slice(2, -2)}</strong>;
         return <span key={j}>{part}</span>;
       });
       return <div key={i} className={i < text.split("\n").length - 1 ? "mb-1" : ""}>{parts}</div>;
@@ -68,7 +67,7 @@ export function ChatBot() {
       const botMsg: Message = {
         id: Date.now() + 1,
         role: "assistant",
-        content: data.reply || data.error || "⚠️ Something went wrong.",
+        content: data.reply || data.error || "⚠️ System failure detected.",
         ts: new Date(),
       };
       setMessages(prev => [...prev, botMsg]);
@@ -76,7 +75,7 @@ export function ChatBot() {
     } catch {
       setMessages(prev => [...prev, {
         id: Date.now() + 1, role: "assistant", ts: new Date(),
-        content: "⚠️ Connection error. Please check your network.",
+        content: "⚠️ Network node unreachable.",
       }]);
     } finally {
       setLoading(false);
@@ -89,129 +88,108 @@ export function ChatBot() {
 
   return (
     <>
-      {/* Floating button */}
       <motion.button
         onClick={() => setOpen(o => !o)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center transition-all"
-        style={{
-          background: open ? "rgba(191,95,255,0.2)" : "var(--neon-green)",
-          border: open ? "1.5px solid var(--neon-violet)" : "none",
-          boxShadow: open ? "0 0 20px rgba(191,95,255,0.4)" : "0 0 30px rgba(0,255,135,0.5)",
-        }}
-        whileHover={{ scale: 1.08 }}
+        className={`fixed bottom-8 right-8 z-50 w-16 h-16 rounded-3xl shadow-2xl flex items-center justify-center transition-all border ${open ? 'bg-[#111827] border-white/10 text-white' : 'bg-blue-600 border-blue-500 text-white shadow-blue-500/20'}`}
+        whileHover={{ scale: 1.05, y: -2 }}
         whileTap={{ scale: 0.95 }}
-        title="CodeBuddy AI"
       >
-        {open
-          ? <X className="w-5 h-5 text-[var(--neon-violet)]" />
-          : <MessageCircle className="w-6 h-6 text-[var(--void-950)]" />
-        }
+        {open ? <X className="w-6 h-6" /> : <MessageCircle className="w-7 h-7" />}
         {!open && unread > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[var(--neon-pink)] text-white text-[10px] font-bold flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-[#0B1120]">
             {unread}
           </span>
         )}
       </motion.button>
 
-      {/* Chat window */}
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 24, scale: 0.95 }}
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.95 }}
-            transition={{ type: "spring", damping: 28, stiffness: 320 }}
-            className="fixed bottom-24 right-6 z-50 w-[360px] sm:w-[400px] flex flex-col"
-            style={{
-              height: "520px",
-              background: "rgba(6,5,18,0.97)",
-              border: "1px solid rgba(191,95,255,0.2)",
-              borderRadius: "20px",
-              boxShadow: "0 0 60px rgba(0,0,0,0.6), 0 0 30px rgba(191,95,255,0.08)",
-            }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-28 right-8 z-50 w-[400px] h-[600px] flex flex-col bg-[#0B1120] border border-white/5 rounded-[40px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3.5 border-b border-[rgba(255,255,255,0.06)] flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[rgba(191,95,255,0.15)] border border-[rgba(191,95,255,0.3)] flex items-center justify-center relative">
-                  <Sparkles className="w-4 h-4 text-[var(--neon-violet)]" />
-                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[var(--neon-green)] border-2 border-[rgba(6,5,18,1)]" style={{ boxShadow: "0 0 6px var(--neon-green)" }} />
+            <div className="flex items-center justify-between px-6 py-5 border-b border-white/5 bg-white/[0.02]">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center relative">
+                  <Bot className="w-5 h-5 text-blue-500" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-blue-500 border-2 border-[#0B1120]" />
                 </div>
                 <div>
-                  <div className="font-heading text-xs font-700 tracking-wider text-white">CODEBUDDY AI</div>
-                  <div className="text-[10px] font-mono text-[var(--neon-green)]">● Online · Groq llama-3.3-70b</div>
+                  <div className="text-[11px] font-bold tracking-[0.2em] text-white uppercase">ARCHITECT INTELLIGENCE</div>
+                  <div className="text-[9px] font-bold text-gray-700 uppercase tracking-widest mt-1">Operational State: Active</div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => setMessages([WELCOME])} title="Clear chat"
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white/20 hover:text-[var(--neon-pink)] hover:bg-[rgba(255,45,120,0.08)] transition-all">
-                  <Trash2 className="w-3.5 h-3.5" />
+                <button onClick={() => setMessages([WELCOME])} className="p-2.5 rounded-xl text-gray-800 hover:text-white hover:bg-white/5 transition-all">
+                  <Trash2 className="w-4 h-4" />
                 </button>
-                <button onClick={() => setOpen(false)}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white/20 hover:text-white/60 hover:bg-white/5 transition-all">
-                  <X className="w-4 h-4" />
+                <button onClick={() => setOpen(false)} className="p-2.5 rounded-xl text-gray-800 hover:text-white hover:bg-white/5 transition-all">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6 no-scrollbar">
               {messages.map((m) => (
-                <motion.div key={m.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                  className={`flex gap-2.5 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
-                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${m.role === "assistant" ? "bg-[rgba(191,95,255,0.12)] border border-[rgba(191,95,255,0.2)]" : "bg-[rgba(0,255,135,0.1)] border border-[rgba(0,255,135,0.2)]"}`}>
+                <motion.div key={m.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                  className={`flex gap-4 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-1 ${m.role === "assistant" ? "bg-white/5 border border-white/5" : "bg-blue-500/10 border border-blue-500/20"}`}>
                     {m.role === "assistant"
-                      ? <Bot className="w-3 h-3 text-[var(--neon-violet)]" />
-                      : <User className="w-3 h-3 text-[var(--neon-green)]" />}
+                      ? <Bot className="w-4 h-4 text-gray-600" />
+                      : <User className="w-4 h-4 text-blue-500" />}
                   </div>
-                  <div className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-[13px] leading-relaxed ${m.role === "assistant" ? "bg-[rgba(255,255,255,0.04)] border border-white/6 text-white/75 rounded-tl-sm" : "bg-[rgba(0,255,135,0.08)] border border-[rgba(0,255,135,0.15)] text-white/85 rounded-tr-sm"}`}>
+                  <div className={`max-w-[85%] px-5 py-3.5 rounded-3xl text-[13px] leading-relaxed shadow-sm ${m.role === "assistant" ? "bg-white/[0.03] border border-white/5 text-gray-300 rounded-tl-sm" : "bg-blue-600 text-white rounded-tr-sm shadow-blue-500/10"}`}>
                     {renderContent(m.content)}
                   </div>
                 </motion.div>
               ))}
 
               {loading && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-2.5">
-                  <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-[rgba(191,95,255,0.12)] border border-[rgba(191,95,255,0.2)]">
-                    <Bot className="w-3 h-3 text-[var(--neon-violet)]" />
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center">
+                    <Bot className="w-4 h-4 text-gray-600" />
                   </div>
-                  <div className="px-3.5 py-3 rounded-2xl bg-[rgba(255,255,255,0.04)] border border-white/6 flex items-center gap-2">
-                    <Loader2 className="w-3 h-3 animate-spin text-[var(--neon-violet)]" />
-                    <span className="text-[11px] font-mono text-white/30">Thinking…</span>
+                  <div className="px-5 py-4 rounded-3xl bg-white/[0.03] border border-white/5 flex items-center gap-3">
+                    <div className="flex gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500/40 animate-bounce" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500/40 animate-bounce [animation-delay:-0.15s]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500/40 animate-bounce [animation-delay:-0.3s]" />
+                    </div>
+                    <span className="text-[10px] font-bold text-gray-700 uppercase tracking-[0.2em]">Processing...</span>
                   </div>
-                </motion.div>
+                </div>
               )}
               <div ref={bottomRef} />
             </div>
 
             {/* Input */}
-            <div className="px-4 pb-4 pt-2 border-t border-[rgba(255,255,255,0.05)] flex-shrink-0">
-              <div className="flex gap-2 items-end">
+            <div className="px-6 py-6 bg-white/[0.01] border-t border-white/5">
+              <div className="flex gap-3 items-end">
                 <textarea
                   ref={inputRef}
                   rows={1}
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={handleKey}
-                  placeholder="Ask a coding question…"
-                  className="flex-1 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl px-3.5 py-2.5 text-[13px] text-white/80 placeholder:text-white/20 outline-none resize-none max-h-[100px] font-body leading-relaxed"
-                  style={{ minHeight: 40 }}
+                  placeholder="Inquiry for the Architect..."
+                  className="flex-1 bg-white/[0.04] border border-white/5 rounded-2xl px-5 py-4 text-[13px] text-white placeholder:text-gray-800 outline-none resize-none max-h-[120px] focus:border-blue-500/30 transition-all font-light"
+                  style={{ minHeight: 52 }}
                   onInput={e => {
                     const t = e.currentTarget;
                     t.style.height = "auto";
-                    t.style.height = Math.min(t.scrollHeight, 100) + "px";
+                    t.style.height = Math.min(t.scrollHeight, 120) + "px";
                   }}
                 />
                 <button onClick={send} disabled={!input.trim() || loading}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-30"
-                  style={{
-                    background: input.trim() && !loading ? "var(--neon-green)" : "rgba(255,255,255,0.05)",
-                    boxShadow: input.trim() && !loading ? "0 0 16px rgba(0,255,135,0.4)" : "none",
-                  }}>
-                  <Send className="w-4 h-4" style={{ color: input.trim() && !loading ? "var(--void-950)" : "rgba(255,255,255,0.2)" }} />
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all shadow-lg ${input.trim() && !loading ? 'bg-blue-600 text-white shadow-blue-500/20 active:scale-95' : 'bg-white/5 text-gray-800 opacity-50'}`}>
+                  <Send className="w-5 h-5" />
                 </button>
               </div>
-              <p className="text-[9px] font-mono text-white/15 mt-1.5 text-center">⇧↵ newline · ↵ send · Powered by Groq</p>
+              <p className="text-[9px] font-bold text-gray-800 mt-3 text-center uppercase tracking-[0.2em]">Core Logic Grid Enabled</p>
             </div>
           </motion.div>
         )}
