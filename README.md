@@ -14,7 +14,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38BDF8?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Groq AI](https://img.shields.io/badge/Groq-llama--3.3--70b-FF6B2B?style=flat-square)](https://console.groq.com/)
 
-[Live Demo](https://code-buddy-web-app.vercel.app) · [Report Bug](https://github.com/Khushant15/CodeBuddyWebApp/issues) · [Request Feature](https://github.com/Khushant15/CodeBuddyWebApp/issues)
+[Live Demo](https://code-buddy-web-app-wes2.vercel.app/) · [Report Bug](https://github.com/Khushant15/CodeBuddyWebApp/issues) · [Request Feature](https://github.com/Khushant15/CodeBuddyWebApp/issues)
 
 </div>
 
